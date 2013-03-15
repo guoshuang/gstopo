@@ -1,0 +1,278 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<title>服务器信息</title>
+<script type="text/javascript" src="themes/default/jquery-1.7.2.min.js"></script>
+<script type="text/javascript" src="themes/default/jquery-ui-1.8.18.custom.min.js"></script>
+<script type="text/javascript" src="themes/default/anychart.js"></script>
+<script type="text/javascript" src="themes/default/html5.js"></script>
+<script type="text/javascript" src="themes/default/main.js"></script>
+<style type="text/css">@import url(themes/default/main.css);</style>
+<style type="text/css">
+body {margin:8px;}
+section {width:50%;float:left}
+.cb33 {font-weight:500;text-align:center;width:33%;}
+.center {text-align:center;}
+.success {color:#060;font-weight:700;}
+.error {color:#c00;font-weight:700;}
+#diskinfo_ul li {width:120px;float:left;}
+#diskinfo_ul li span {display:block;text-align:center;line-height:20px;}
+#diskinfo_ul li span.directory {height:40px;overflow:hidden;text-overflow:ellipsis;word-break:break-all;cursor:default}
+#serverinfo_res {font-size:18px;font-style:italic;}
+th {color:#777;white-space:nowrap;}
+#hour24 li {display:inline-block;*display:inline;*zoom:1;cursor:pointer;}
+#totalInfoTb td,#totalInfoTb td a {font-size:14px;}
+#gContainer {width:780px;}/*页面容器的宽度！*/
+</style>
+<script type="text/javascript">
+//color defined by guoshuang
+var gColors=['#cc0000','#00cc00','#0000cc','#cccc00','#00cccc','#cccccc'];
+var gCharts=[];
+
+jQuery(function(){
+/////////////////////////////
+
+var chart1 = new AnyChart("anychart.swf");
+chart1.setXMLFile("g1.xml");
+chart1.wMode="opaque";
+chart1.width="100%";
+chart1.height='120';
+chart1.write("chart1_div");	
+
+var chart2 = new AnyChart("anychart.swf");
+chart2.setXMLFile("g1.xml");
+chart2.wMode="opaque";
+chart2.width="100%";
+chart2.height='120';
+chart2.write("chart2_div");
+
+var chart3 = new AnyChart("anychart.swf");
+chart3.setXMLFile("g1.xml");
+chart3.wMode="opaque";
+chart3.width="100%";
+chart3.height='120';
+chart3.write("chart3_div");	
+
+var splineChart = new AnyChart("anychart.swf");
+
+//initial static info
+$.ajax({
+	url:'ajax_once.php',
+	data:{},
+	async:false,
+	cache:false,
+	success:function(d){
+		eval("var d="+d);
+		$('#server_info1').html('<a href="'+d.server_info.name.url+'">'+d.server_info.name.text+'</a>');
+		$('#server_info2').html('<a href="'+d.server_info.type.url+'">'+d.server_info.type.text+'</a>');
+		$('#server_info3').html('<a href="'+d.server_info.itm.url+'">'+d.server_info.itm.text+'</a>');
+		$('#server_info4').text(d.server_info.ip);
+		$('#ajaxDelay').val(d.server_info.delay);
+		
+		//console.log(d.disk_info)
+		$.each(d.disk_info,function(j,k){
+			$('#diskinfo_ul').append('<li><span class="directory" title="'+k.directory+'">'+k.directory+'</span><span class="chartFlash" id="direcLi'+j+'"></span><span class="i">全部：<strong>'+k.total+'</strong> '+k.unit+'<br />空闲：<strong>'+k.free+'</strong> '+k.unit+'<br />已用：<strong> '+k.used+'</strong> '+k.unit+'</span></li>');
+			var chart = new AnyChart("anychart.swf");
+			chart.setXMLFile("g4.xml");
+			chart.wMode="opaque";
+			chart.width="100%";
+			chart.height='100';
+			chart.write('direcLi'+j);	
+			gCharts.push(chart)
+		})
+		
+		var ohtml='';
+		var DATA='';	
+		
+		$.each(d.hour24_info,function(jj,kk){
+			
+			if(jj<3){
+				DATA+='<series id="data'+jj+'" name="'+kk.name+'">'
+					$.each(kk.items,function(x,y){
+						DATA+='<point color="'+kk.color+'" name="'+y.name+'" y="'+y.value+'" />';
+					})
+				DATA+='</series>';
+			}else{
+			
+			DATA+='<series id="data3"  name="'+kk.name+'">'
+				$.each(kk.items,function(x,y){
+					DATA+='<point color="'+kk.color+'" name="'+y.name+'" y="'+y.value+'" />'
+				})
+			DATA+='</series>';
+			}	
+			
+			ohtml+='<li data-display="1"><span style="background:'+kk.color+'"></span> '+kk.name+'</li>';
+			
+		})
+		$('#hour24').empty().append('<ul>'+ohtml+'</ul>');
+		
+		splineChart.setData('<anychart><margin all="-15" /><settings><animation enabled="true" /></settings><charts><chart plot_type="CategorizedVertical"><chart_settings><chart_background><border  enabled="false"></border><fill enabled="true" /></chart_background><title enabled="0"><text>Multi-Series: Spline Chart</text><background enabled="0" /></title><axes><x_axis><title enabled="false" /><labels><font color="#135D8C" /></labels></x_axis><y_axis><title enabled="false" /><scale /><labels><font color="#135D8C" /><format>{%Value}{numDecimals:0}</format></labels></y_axis></axes></chart_settings><data_plot_settings default_series_type="Spline"><line_series><tooltip_settings enabled="true"><format>  {%Name} {%SeriesName}：{%YValue}{numDecimals:0}</format><font size="12" /></tooltip_settings><line_style><line thickness="2" /></line_style></line_series></data_plot_settings><data>'+DATA+'</data></chart></charts></anychart>')
+		splineChart.wMode="opaque";
+		splineChart.width="100%";
+		splineChart.height='200';
+		splineChart.write("splineDiv");
+			
+		//第一次ajax完成之后 发出 realtime ajax 请求
+		ask4Data(5000);
+	}		
+})
+
+$('#hour24 li').click(function(){
+	if($(this).attr('data-display')==1){
+		splineChart.showSeries('data'+$(this).index(),false)
+		$(this).attr('data-display',0).css({opacity:0.4});
+	}else{
+		splineChart.showSeries('data'+$(this).index(),true)
+		$(this).attr('data-display',1).css({opacity:1});
+	}
+	splineChart.refresh()
+})
+
+//realtime info
+var timer1=null
+var timeDelay=$('#ajaxDelay').val();
+
+function ask4Data(){
+var REQUEST=$.ajax({
+		url:'ajax_realtime.php',
+		cache:false,
+		success:function(d){
+			eval('var d='+d);				
+			chart1.updatePointData('','p1', {value:d.run_info.cpu});
+			chart1.refresh();			
+			chart2.updatePointData('','p1', {value:d.run_info.ram});
+			chart2.refresh();
+			chart3.updatePointData('','p1', {value:d.run_info.lost});
+			chart3.refresh();
+					
+			$('#statusContainer').text(d.server_info.status.text).attr('class',d.server_info.status.className);
+			$('#server_info_alert').text(d.server_info.alerts);
+			$('#server_info_alert_time').text(d.server_info.alert_time);
+			
+			$('#serverinfo_cpu').text(d.run_info.cpu);
+			$('#serverinfo_ram').text(d.run_info.ram);
+			$('#serverinfo_lost').text(d.run_info.lost);
+			$('#serverinfo_res').text(d.run_info.response);
+			
+			$.each(d.disk_info,function(j,k){
+				//小于50绿色，50-80 橙色 80以上红色
+				var ocolor='#00cc00';
+				var oval=k.used/k.total*100;
+				if(oval>50){
+					ocolor='#ffcc00';
+				}
+				if(oval>80){
+					ocolor='#cc0000';
+				}
+				
+				gCharts[j].updatePointData('','bkColor', {color:ocolor});
+				gCharts[j].updatePointData('','bkColor', {value:oval});
+				
+				var obj=$('#diskinfo_ul').find('li:eq('+j+')').find('.i strong');
+				$(obj[0]).text(k.total);
+				$(obj[1]).text(k.free);
+				$(obj[2]).text(k.used);
+				//obj[0].text(k.free);
+				//obj[0].text(k.used);
+			})
+
+			//console.log(timeDelay)
+			timer1=setTimeout(ask4Data,timeDelay);
+		}	
+	})
+	REQUEST.onreadystatechange = null;
+	REQUEST.abort = null;
+	REQUEST = null;
+} 
+
+$('#ajaxDelay').change(function(){
+	timeDelay=$('#ajaxDelay').val();
+})
+
+$('#sortableDiv').sortable({
+	cursor:'move',
+	opacity:0.6,
+	placeholder:'placeholder'
+})
+
+/////////////////////////////
+})
+</script>
+</head>
+<body>
+
+<div id="gContainer">
+
+<div style="text-align:right;">采样间隔： <select id="ajaxDelay"><option value="5000">5秒</option><option value="10000">10秒</option><option value="20000">20秒</option><option value="30000">30秒</option><option value="40000">40秒</option><option value="60000">1分钟</option><option value="120000">2分钟</option></select></div>
+
+<div id="sortableDiv">
+
+<section>
+<h2 class="collapsable"><span class="t">服务器信息</span></h2>
+<div class="h2CollapseDiv">
+<table class="gGrid" id="totalInfoTb">
+<tbody>
+<tr><th width="1%" class="r">名称：</th><td  id="server_info1"></td></tr>
+<tr><th class="r">类型：</th><td  id="server_info2"></td></tr>
+<tr><th class="r">ITM服务器：</th><td id="server_info3"></td></tr>
+<tr><th class="r">IP地址：</th><td id="server_info4"></td></tr>
+<tr><th class="r">状态：</th><td><span id="statusContainer"></span></td></tr>
+<tr><th class="r">报警次数：</th><td id="server_info_alert"></td></tr>
+<tr><th class="r">最后一次报警时间：</th><td id="server_info_alert_time"></td></tr>
+</tbody>
+</table>
+</div>
+</section>
+<!--
+<section>
+<h2 class="collapsable"><span class="t">服务器信息</span></h2>
+<table class="formGrid" id="totalInfoTb" style="background:#eef;width:100%;">
+<tr><th>名称：</th><td  id="server_info1"></td></tr>
+<tr><th>类型：</th><td  id="server_info2"></td></tr>
+<tr><th>ITM服务器：</th><td id="server_info3"></td></tr>
+<tr><th>IP地址：</th><td id="server_info4"></td></tr>
+<tr><th>状态：</th><td><span id="statusContainer"></span></td></tr>
+<tr><th>报警次数：</th><td id="server_info_alert"></td></tr>
+<tr><th>最后一次报警时间：</th><td id="server_info_alert_time"></td></tr>
+</table>
+</section>
+-->
+
+<section>
+<h2 class="collapsable"><span class="t">运行信息</span></h2>
+<div style="text-align:right;">
+响应时间：<span class="width4em" id="serverinfo_res"></span> ms
+<table width="100%" cellpadding="0" cellspacing="0">
+<tr>
+<td style="width:33%;"><div id="chart1_div"></div></td> 
+<td style="width:33%;"><div id="chart2_div"></div></td> 
+<td style="width:33%;"><div id="chart3_div"></div></td>
+</tr>
+<tr>
+<td class="center">CPU使用率：<span id="serverinfo_cpu" class="width2em"></span>%</td> 
+<td class="center">内存使用率：<span id="serverinfo_ram" class="width2em"></span>%</td> 
+<td class="center">丢包率：<span id="serverinfo_lost" class="width2em"></span>%</td> 
+</tr>
+</table>
+</div>
+</section>
+
+<div style="clear:both;"></div>
+<section style="width:100%">
+<h2 class="collapsable"><span class="t">24小时服务器信息</span></h2>
+<div><div id="hour24"></div>
+<div id="splineDiv"></div>
+</div>
+</section>
+
+<div style="clear:both;"></div>
+<section style="width:auto;">
+<h2 class="collapsable"><span class="t">逻辑磁盘信息</span></h2>
+<ul id="diskinfo_ul"></ul>
+</section>
+
+</div>
+</div>
+</body>
+</html>lineb

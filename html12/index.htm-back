@@ -1,0 +1,37 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<title>服务器信息</title>
+<script type="text/javascript" src="themes/default/jquery-1.7.2.min.js"></script>
+<script type="text/javascript" src="themes/default/jquery-ui-1.8.18.custom.min.js"></script>
+<script type="text/javascript" src="themes/default/anychart.js"></script>
+<script type="text/javascript" src="themes/default/html5.js"></script>
+<script type="text/javascript" src="themes/default/main.js"></script>
+<style type="text/css">@import url(themes/default/main.css);</style>
+<script>
+$(function(){
+
+$('#btn1').click(function(){
+	$('#testIframe').attr('width',800).attr('height',400)
+})
+
+$('#btn2').click(function(){
+	$('#testIframe').attr('width',354).attr('height',168)
+})
+
+$('#btn3').click(function(){
+	window.open('info.htm')
+})
+
+
+})
+</script>
+<style>
+html,body {height:100%;}
+</style>
+<body>
+<div><button id="btn1">800*400</button><button id="btn2">354*168</button><button id="btn3">全屏</button></div>
+<iframe id="testIframe" width="800" height="600" src="info.htm" frameborder="0"></iframe>
+</body>
+</html>

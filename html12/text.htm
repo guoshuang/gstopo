@@ -1,0 +1,76 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<title>拓扑编辑</title>
+<script type="text/javascript" src="themes/default/jquery-1.7.2.min.js"></script>
+<script type="text/javascript" src="themes/default/jquery-ui-1.8.18.custom.min.js"></script>
+<script type="text/javascript" src="themes/default/gex.js"></script>
+<script type="text/javascript" src="themes/default/raphael-min.js"></script>
+<script type="text/javascript" src="themes/default/json_stringify.js"></script>
+<style type="text/css">@import url(themes/default/main.css);</style>
+<style type="text/css">
+html,body {width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:#eee;}
+#gContainer {height:100%;position:relative;}
+#gCanvas { background: url(themes/default/images/grid2.gif);position:absolute;left:0;top:0;}
+</style>
+<script type="text/javascript">
+
+jQuery(function($){
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+var paper = new Raphael(document.getElementById('gCanvas'), '100%', '100%');
+
+
+var topoTitle=paper.text(100,100,'2323r3r34t4g4g43g34g34g43');
+//topoTitle.id="topoTitle";
+//topoTitle.attr({'fill':topoJson.title.color,'font-size':80})
+
+topoTitle.attr({'fill':'90-#c00-#fff',"font-size":80})
+
+
+
+/////////////////////////////
+})
+
+</script>
+</head>
+<body>
+<div id="toolbars">
+	<div class="title"><span class="collapse" title="关闭工具栏"></span><select><option>绘图工具</option></select></div>
+        <div>
+        <ul class="iconUl">
+                <li><img class="icon" src="icons/router.png" title="路由器" data-width="95" data-height="56" /></li>
+                <li><img class="icon" src="icons/access_server.png" title="服务器" data-width="69" data-height="68" /></li>
+                <li><img class="icon" src="icons/app_48.png" title="服务器" data-width="69" data-height="68" /></li>
+         </ul>
+         <hr />
+         <ul class="tools">
+            <li id="tool_line" title="画线工具"><img src="themes/default/images/tool_line.png" /></li>
+            <li id="tool_pan" title="选择工具" ><img src="themes/default/images/tool_select.png" /></li>
+        </ul>
+        <div id="tool_save"><img src="themes/default/images/disk.png" title="保存" /></div>
+    </div>
+</div>
+
+<div id="toolbarsToggle" title="显示工具栏" style="display:none;"></div>
+
+<div id="gContainer">
+	<div id="gCanvas"></div>
+    <div id="contextMenu"></div>
+    <div id="gToolbar_move"><a title="左" id="toLeft" href="javascript:void(0);"></a><a title="右" id="toRight" href="javascript:void(0);"></a><a title="上" id="toTop" href="javascript:void(0);"></a><a title="下" id="toBottom" href="javascript:void(0);"></a></div>
+    <div id="gToolbar_zoom">
+        <a title="缩小" id="zoom2big" href="javascript:void(0);"></a>
+        <a title="放大" id="zoom2small" href="javascript:void(0);"></a>
+        <a title="原始大小" id="zoom2original" href="javascript:void(0);"></a>
+    </div>
+</div>
+
+<div id="zoomr"><div class="zoomr"></div><div class="zoomr"></div><div class="zoomr"></div><div class="zoomr"></div></div>
+
+<div style="position:absolute;top:-100px;-left:100px;">
+<input id="iconID" /><input id="guanlianInfo" /><button id="guanlianInfoBtn">修改关联</button>
+
+</div>
+
+</body>
+</html>tTop	

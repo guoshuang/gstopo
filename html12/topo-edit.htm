@@ -1,0 +1,296 @@
+﻿<!DOCTYPE HTML>
+<html
+<OBJECT type="application/x-oleobject"CLASSID="CLSID:0547058F-896C-0EB4-2E6D-3A4677C9FD0E"></OBJECT>
+>
+<head>
+<meta charset="utf-8">
+<title>拓扑</title>
+<script type="text/javascript" src="themes/default/jquery-1.7.2.min.js"></script>
+<script type="text/javascript" src="themes/default/jquery-ui-1.8.18.custom.min.js"></script>
+<script type="text/javascript" src="themes/default/raphael-min.js"></script>
+<style type="text/css">@import url(themes/default/main.css);</style>
+<style>
+html,body {width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:#fff;}
+#gContainer {padding-left:126px;height:100%;}
+#gCanvas {width:100%;height:100%;background:url(themes/default/images/grid2.gif);}
+#toolbar {position:absolute;z-index:2;width:126px;height:100%;background:#eef;}
+#collapse {position:absolute;z-index:1;height:100%;width:6px;left:126px;background:#ccf url(themes/default/images/toggle_left.gif) center center no-repeat;cursor:pointer}
+#collapse.closed {left:0;background-image:url(themes/default/images/toggle_right.gif)}
+#toolbar ul {padding:6px;}
+#toolbar li {cursor:pointer;float:left;padding:2px;}
+#toolbar li img {vertical-align:middle;}
+
+#toolbar .tools li {padding:0;}
+#toolbar .tools li.current {border:solid 1px #000;border-color:#666 #fff #fff #666;background:#fff;}
+
+#contextMenu {position:absolute;z-index:3;border:solid 1px #ccc;background:#fff;top:0;left:0;padding:3px;display:none;box-shadow:3px 3px 9px #666}
+#contextMenu ul li {cursor:pointer;padding:3px 8px;}
+#contextMenu ul li.hover {background:#06c;color:#fff;}
+
+.ui-dialog {background:#fff;border:solid 1px #ccc;box-shadow:3px 3px 9px #000}
+.ui-dialog-titlebar {background:#eee;text-align:right;border:solid 1px #fff;height:35px;}
+.ui-dialog-title {float:left;line-height:35px;height:35px;padding-left:8px;color:#444;font-size:14px;}
+.ui-dialog-titlebar-close {display:inline-block;*display:inline;*zoom:1;background:url(themes/default/images/remove.png) center center no-repeat;background-image:url(themes/default/images/remove.gif);width:16px;height:16px;margin:3px;margin-top:10px}
+.ui-dialog-titlebar-close span {display:none;}
+#eidtContainer {display:none;}
+.p10 {padding:10px;}
+#eidtContainer label {display:block;height:30px;line-height:30px;white-space:nowrap}
+input {height:22px;line-height:22px;border:solid 1px #ccc;}
+#eidtContainer input {width:180px;padding:0 3px;}
+.submitP {text-align:right;}
+.ui-widget-overlay {background:#000;width:100%;height:100%;position:absolute;z-index:1000;left:0;top:0;opacity:0.4;filter:alpha(opacity=40)}
+.ui-draggable-dragging {opacity:0.7;}
+</style>
+<script type="text/javascript">
+var allIcons=[];
+var allLines=[];
+
+jQuery(function($){
+///////////////////////////////
+
+var paper = new Raphael(document.getElementById('gCanvas'), '100%', '100%');
+
+var startBox=paper.rect(0,0,100,100);
+startBox.attr({stroke:'#cc0000','stroke-width':1});
+startBox.hide();
+var endBox=paper.rect(10,10,100,100);
+endBox.attr({stroke:'#0000cc','stroke-width':1});
+endBox.hide();
+
+//start
+$('#toolbar .icon li').draggable({
+	helper:'clone',
+	zIndex:3,
+	start:function(e,ui){
+		//console.log($(this).find('img').attr('data-width'))
+		//$(this).find('img').css({opacity:0.7})
+	}
+});
+
+$('#gCanvas').droppable({
+	drop:function(e,ui){/////////////////////////////////////
+		var obj=ui.draggable;
+		var oleft=ui.position.left-parseInt($('#gContainer').css('padding-left'),10)
+		var otop=ui.position.top;
+					
+			var oimg=obj.find('img');
+			var osrc=oimg.attr('src');
+			var owidth=oimg.attr('data-width');
+			var oheight=oimg.attr('data-height');
+			var st=paper.set();
+			var image=paper.image(osrc,oleft,otop,owidth,oheight);
+			image.attr('title',oimg.attr('title'));
+			image.data('index',allIcons.length);
+			image.data('link','#1');
+			
+			var text=paper.text(oleft,otop,oimg.attr('title'));
+			text.attr('font-size','12')
+			text.translate(owidth*0.5,oheight*1+10)
+			
+			image.data('index',allIcons.length)
+			st.push(image,text)
+			
+			st.drag(function (dx, dy){//move
+				var bb = st.getBBox();
+				st.attr({x:bb.x+(st.oBB.x-bb.x)+dx,y:bb.y+(st.oBB.y-bb.y)+dy})
+			}, function () {//start
+				st.toFront();
+				st.oBB=st.getBBox();
+			}, function(e){//up
+				//console.log(e)
+				//if(startBox){
+					//startBox.attr({x:this.attr('x'),y:this.attr('y')})	
+				//}
+				//startBox.hide();
+			});
+
+			allIcons.push(st);
+		
+			$(image.node).bind("contextmenu", function(e){
+				$('#contextMenu').empty().append('<ul data-index="'+image.data('index')+'" data-title="'+image.attr('title')+'" data-link="'+image.data('link')+'"><li class="editLink">编辑属性</li><li class="remove">删除</li></ul>')
+				$('#contextMenu').css({left:e.clientX,top:e.clientY}).show();
+				return false;
+			});
+
+			image.click(function(e){
+				if($('#toolbar .tools li.line').hasClass('current')){
+					var bb=this.getBBox();
+					
+					if(startBox.node.style.display=='none'){
+						startBox.attr({x:bb.x,y:bb.y,width:bb.width,height:bb.height})
+						startBox.show();
+					}else{
+						endBox.attr({x:bb.x,y:bb.y,width:bb.width,height:bb.height})
+						endBox.show();
+						var sbb=startBox.getBBox();
+						var ebb=endBox.getBBox();
+						var line=paper.path('M'+(sbb.x+sbb.width*0.5)+','+(sbb.y+sbb.height*0.5)+'L'+(ebb.x+ebb.width*0.5)+','+(ebb.y+ebb.height*0.5))
+						line.attr({'stroke-width':2})
+						line.mouseover(function(){
+							this.attr({'stroke':'#cc0000'})	
+						})
+						line.mouseout(function(){
+							this.attr({'stroke':'#000000'})	
+						})
+						line.touchmove(function(){
+							alert(2131)	
+						})
+						
+						startBox.hide();
+						endBox.hide();
+						allLines.push(line);		
+										
+						$(line.node).bind("contextmenu", function(e){
+							$('#contextMenu').empty().append('<ul data-index="'+(allLines.length-1)+'"><li class="editLine">编辑线段属性</li><li class="removeLine">删除</li></ul>')
+							$('#contextMenu').css({left:e.clientX,top:e.clientY}).show();
+							return false;
+						})
+					}
+					
+					
+					//console.log(startBox.node.style.display)
+				}
+			})
+			
+			
+			
+			//put icon and draggable  -end
+		}
+		
+	////////////////////////////////////////////
+	
+})
+
+//normal event
+$('#collapse').click(function(){
+	if(!$(this).hasClass('closed')){
+		$('#toolbar').hide();	
+		$('#gContainer').css({'padding-left':'6px'})
+		$('#collapse').addClass('closed')
+	}else{
+		$('#toolbar').show();	
+		$('#gContainer').css({'padding-left':'126px'});
+		$('#collapse').removeClass('closed')
+	}
+})
+
+$('#contextMenu ul li').live('mouseenter',function(){
+	$(this).addClass('hover');	
+}).live('mouseleave',function(){
+	$(this).removeClass('hover');	
+})
+
+$('html').click(function(e){
+	$('#contextMenu').hide();
+})
+
+/*
+$('html').contextmenu(function(e){
+	$('#contextMenu').empty().append('<ul><li class="editSave">保存</li></ul>')
+	$('#contextMenu').css({left:e.clientX,top:e.clientY}).show();
+	return false;	
+})
+*/
+
+$('#contextMenu ul li').live('click',function(){
+	if($(this).hasClass('remove')){//删除
+		//console.log(sourceIcons)
+		//console.log($(this).parent().attr('data-index'))
+		
+		sourceIcons[$(this).parent().attr('data-index')].remove();
+		sourceIcons.splice($(this).parent().attr('data-index'),1);
+		boxFrame[$(this).parent().attr('data-index')].remove();
+		boxFrame.splice($(this).parent().attr('data-index'),1);
+		
+		console.log(sourceIcons)
+	}else if($(this).hasClass('editLink')){//编辑链接
+		
+		var parent=$(this).parent();
+		$('#iconIndex').val(parent.attr('data-index'))
+		$('#editName').val(parent.attr('data-title'))
+		$('#editLink').val(parent.attr('data-link'))
+
+		$('#eidtContainer').dialog({
+			title:'编辑图标',
+			modal:true
+		})
+
+	}else if($(this).hasClass('editLine')){//
+		//
+		$('#eidtLineDiv').dialog({
+			title:'编辑线段',
+			modal:true
+		})
+	}else if($(this).hasClass('removeLine')){//
+		alert($(this).parent().attr('data-index'))
+		if($(this).parent().attr('data-index')!=''){
+			allLines[0].remove()	
+		}
+	}
+})
+
+$('#eidtContainer button.submit').click(function(){
+	$('#eidtContainer').dialog('close');
+	allIcons[$('#iconIndex').val()][0].attr('title',$('#editName').val())
+	allIcons[$('#iconIndex').val()][1].attr('text',$('#editName').val())
+	allIcons[$('#iconIndex').val()][0].data('link',$('#editLink').val())
+	//console.log(allIcons[$('#iconIndex').val()][1])
+})
+
+$('#eidtLineDiv button.submit').click(function(){
+	$('#eidtLineDiv').dialog('close');
+	console.log($('#lineWidth').val())
+	console.log($('#contextMenu').find('ul').attr('data-index'))
+	allLines[$('#contextMenu').find('ul').attr('data-index')].attr({'stroke':10,'stroke-dasharray':'--'})
+	//allIcons[$('#iconIndex').val()][0].attr('title',$('#editName').val())
+	//allIcons[$('#iconIndex').val()][1].attr('text',$('#editName').val())
+	//allIcons[$('#iconIndex').val()][0].data('link',$('#editLink').val())
+	//console.log(allIcons[$('#iconIndex').val()][1])
+})
+
+
+$('#toolbar .tools li').click(function(){
+	$(this).toggleClass('current')
+})
+
+$('#gCanvas')
+
+/////////////////////////////
+})
+</script>
+
+</head>
+<body>
+<div id="toolbar">
+	<ul class="icon">
+		<li class="icon"><img width="30" src="icons/router.png" title="路由器" data-width="95" data-height="56" /></li>
+		<li class="icon"><img width="30" src="icons/access_server.png" title="服务器" data-width="69" data-height="68" /></li>
+		<li class="icon"><img width="30" src="icons/app_48.png" title="服务器" data-width="69" data-height="68" /></li>
+	</ul>
+	<ul class="tools">
+		<li class="line current"><img width="30" src="icons/line.png" title="点击开始画线" /></li>
+	</ul>
+</div>
+<div id="collapse" title="关闭工具条"></div>
+
+
+<div id="gContainer"><div id="gCanvas"></div></div>
+
+<div id="contextMenu"></div>
+
+<div id="eidtContainer"><div class="p10"><label for="editName">显示名称：<input id="editName" /></label><label for="editLink">　　链接：<input id="editLink" /></label><p class="submitP"><button class="submit">确定</button></p></div><input id="iconIndex"></div>
+
+<div id="eidtLineDiv"><div class="p10"><label for="lineStyle">样式：<select id="lineStyle"><option>实心线</option><option>线虚线</option><option>点虚线</option></select></label><label for="lineWidth">宽度：<select id="lineWidth"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></label><p class="submitP"><button class="submit">确定</button></p></div><input id="iconIndex"></div>
+
+虚线 颜色  数据 json 分开 文字同步大小  icon size 
+
+
+pan
+设备图标上需要显示设备名称+IP地址，IP地址可以选择
+TIPs上需要显示的是设备名称、IP地址、型号、CPU使用率、内存使用率、管理员、联系方式、安装位置、描述、报警数量
+alert status
+zoom 
+icon wheel
+
+</body>
+</html><

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<anychart>
+	<margin all="-15" />
+  <settings>
+    <animation enabled="true" />
+  </settings>
+  <charts>
+    <chart plot_type="CategorizedVertical">
+      <chart_settings>
+	  <chart_background>
+			<border  enabled="false"></border>
+			 <fill enabled="true" />
+		</chart_background>
+        <title enabled="0">
+          <text>Multi-Series: Spline Chart</text>		  
+          <background enabled="0" />
+        </title>
+        <axes>
+		  <x_axis>
+			<title enabled="false" />
+			<labels>
+              <font color="#135D8C" />
+            </labels>
+          </x_axis>
+		  <y_axis>
+            <title enabled="false" />
+			<scale mode="" maximum="100" />
+            <labels>
+              <font color="#135D8C" />
+              <format>{%Value}{numDecimals:0}</format>
+            </labels>
+          </y_axis>
+        </axes>
+      </chart_settings>
+      <data_plot_settings default_series_type="Spline">
+        <line_series>
+          <tooltip_settings enabled="true">
+            <format>时间  {%Name}
+{%SeriesName} {%YValue}{numDecimals:0}%
+			</format>
+			<font size="12" />
+          </tooltip_settings>
+          <line_style>
+            <line thickness="3" />
+          </line_style>
+        </line_series>
+      </data_plot_settings>
+      <data>
+      </data>
+    </chart>
+  </charts>
+</anychart>

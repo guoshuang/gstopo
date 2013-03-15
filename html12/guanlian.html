@@ -1,0 +1,101 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta charset="utf-8">
+<title>选择关联设备</title>
+<script type="text/javascript" src="themes/default/jquery-1.7.2.min.js"></script>
+<script type="text/javascript" src="themes/default/jquery-ui-1.8.18.custom.min.js"></script>
+<script type="text/javascript" src="themes/default/gex.js"></script>
+<script type="text/javascript" src="themes/default/raphael-min.js"></script>
+<style type="text/css">
+@import url(themes/default/main.css);
+</style>
+<style type="text/css">
+body {margin:8px;}
+tr.hover {background-color:#ccf;}
+tbody tr {cursor:pointer;}
+</style>
+
+<script type="text/javascript">
+jQuery(function($){
+////////////////////////////////////////
+
+$('#deviceTable tbody tr').live('click',function(){
+	var guanlianInput=window.opener.$('#guanlianInfo');
+	var da=$(this).attr('data-type');
+	var ds_ty=da.trim();
+	var oval=$(this).attr('data-id')+'||'+ds_ty+'||'+$(this).attr('data-content');
+	$('#input1').val(oval)
+	guanlianInput.val(oval)
+}).live('mouseenter',function(){
+	$(this).addClass('hover');
+}).live('mouseleave',function(){
+	$(this).removeClass('hover');
+})
+
+$('#btn1').click(function(){
+	var oval=$('#input1').val();
+	if(oval==''){alert('请选择有效的设备');return false;}
+	var guanlianInput=window.opener.$('#guanlianInfo');
+	guanlianInput.val(oval);
+	var guanlianInfoBtn=window.opener.$('#guanlianInfoBtn');
+	guanlianInfoBtn.trigger('click');
+	setTimeout(function(){
+		window.close();
+	},300)
+})
+
+$('.gTab li').click(function(){
+	var par=$(this).parent();
+	par.find('li').removeClass('current');
+	$(this).addClass('current');
+	var tabCon=par.parent().find('.tabContent');
+	
+	
+	var otype=$(this).attr('data-type')?$(this).attr('data-type'):'';//空表示全部
+
+	$.ajax({
+		url:'json-guanlian.php',
+		data:{type:otype},
+		aysnc:false,
+		success:function(d){
+			tabCon.empty().append(d)
+		}
+	})
+	
+
+}).mouseenter(function(){
+	$(this).addClass('hover');
+}).mouseleave(function(){
+	$(this).removeClass('hover');
+})
+
+//first time click the tab one
+$('.gTab li:first').trigger('click');
+
+////////////////////////////////////////
+})
+</script>
+<title>信息列表</title>
+	
+
+</head>
+<body>
+
+
+<div id="tabContainer">
+
+<ul class="gTab">
+    <li data-type="network">网络设备</li>
+    <li data-type="server">服务器</li>
+    <li data-type="database">数据库</li>
+	<li>中间件</li>
+</ul>
+<div class="tabContent"></div>
+
+</div>
+
+<input id="input1" style="width:400px;" />	<button id="btn1">确定</button>
+
+</body>
+</html>

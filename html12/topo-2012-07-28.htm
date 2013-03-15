@@ -1,0 +1,334 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<title>拓扑显示</title>
+<script type="text/javascript" src="themes/default/jquery-1.7.2.min.js"></script>
+<script type="text/javascript" src="themes/default/jquery-ui-1.8.18.custom.min.js"></script>
+<script type="text/javascript" src="themes/default/gex.js"></script>
+<script type="text/javascript" src="themes/default/raphael-min.js"></script>
+<style type="text/css">@import url(themes/default/main.css);</style>
+<style type="text/css">
+html,body {width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:#fff  url(themes/default/images/grid2.gif);}
+#gContainer {height:100%;}
+</style>
+<script type="text/javascript">
+var alertInterval=30;// 警告ajax获取间隔时间 秒
+var canvasSize={width:3000,height:3000};//canvas size define
+var alertAnimation=false;//打开动画，浏览器比较卡
+var alertAnimation2=false;
+var controlStep=100;//move step
+
+//Static topo icons checklist -- category of Network
+var topoTypeList;
+$.ajax({
+	url:'topo_type_list.php',
+	data:{type:'network'},
+	async:false,
+	success:function(d){
+		eval('topoTypeList='+d);	
+	}
+});
+
+//topo info from system
+var topoJson;
+$.ajax({
+	url:'topo_json.php',
+	data:{id:123},//某某拓扑的数据
+	async:false,
+	success:function(d){
+		eval('topoJson='+d);	
+	}
+});
+
+//topo info from frontend
+var topoJsonPos;
+$.ajax({
+	url:'topo_json_pos.php',
+	data:{id:123},//某某拓扑的位置信息（编辑过的）
+	async:false,
+	success:function(d){
+		eval('topoJsonPos='+d);	
+	}
+});
+
+function showTips(x,y,content){
+	$('#tipsDiv').css({left:x,top:y}).empty().append(content).show()	
+}
+
+var allIcons=[];
+
+jQuery(function($){
+///////////////////////////////
+$('#gCanvas').css({width:canvasSize.width,height:canvasSize.height}).draggable({
+	cursor:'move',
+	containment:[-3000,-3000,0,0],
+	start:function(){
+		$('#tipsDiv').hide();
+	}
+})
+
+var paper = new Raphael(document.getElementById('gCanvas'), '100%', '100%');
+
+//draw icons initial
+$.each(topoJson.icons,function(j,k){
+	var icon=paper.image(topoTypeList[k.type].src,0,0,topoTypeList[k.type].w,topoTypeList[k.type].h);//默认左上角，图标默认大小，这是那种没有被 编辑 过位置 的图标
+	icon.id=k.id;
+	icon.data('title',k.name);
+	icon.data('url',k.url);
+	icon.data('zoom',1);
+	allIcons.push(icon);
+	
+	if(k.url)icon.attr({cursor:'pointer'})
+	icon.mouseover(function(e){
+		showTips(e.clientX,e.clientY,k.tips)	;
+		this.attr({transform:'s1.1'})
+		//e.cancelBubble=true;
+	})
+	
+	//edit status need this 
+	/*$(icon.node).mousewheel(function(e,delta){
+		if(delta>0){
+			var scale=icon.attr('transform')[0][1]+0.1;
+		}else{
+			var scale=icon.attr('transform')[0][1]-0.1;
+		}
+		icon.attr({transform:'s'+scale})
+	})*/
+	
+	icon.mouseout(function(e){
+		this.attr({transform:'s1'})
+	})
+		icon.click(function(){
+		//console.log(icon.data('url'))
+		if(icon.data('url')){
+			window.open(icon.data('url'))	
+		}
+	})		
+})
+
+//move icons to their edited position
+$.each(topoJsonPos.icons,function(j,k){
+	var icon=paper.getById(k.id);
+	if(icon!=null){//万一前后台 icon 数量不对应;没有位置的 icon 显示在左上角
+		
+		//如果修改过位置和大小的话
+		if(k.w&&k.h){
+			//icon.attr({x:k.x,y:k.y,width:k.w,height:k.h});
+			var anim = Raphael.animation({x:k.x,y:k.y,width:k.w,height:k.h},500,'bounce');
+			icon.animate(anim.delay(200*j))
+		}else{
+			//这种情况应该不会出现，edit get the full format!
+			icon.attr({x:k.x,y:k.y,width:64,height:64});
+		}
+		
+	}
+})
+
+//draw lines
+setTimeout(function(){//有动画，延迟画线 -start
+/////////////////////////////
+
+$.each(topoJson.lines,function(j,k){
+	var from=paper.getById(k.from);
+	var fx=from.attr('x')+from.attr('width')*0.5;
+	var fy=from.attr('y')+from.attr('height')*0.5;
+	var to=paper.getById(k.to);
+	var tx=to.attr('x')+to.attr('width')*0.5;
+	var ty=to.attr('y')+to.attr('height')*0.5;
+	var line=paper.path('M'+fx+','+fy+'L'+tx+','+ty);
+	line.id=k.from+'_'+k.to;
+	line.toBack();
+})
+
+//modify line style
+$.each(topoJsonPos.lines,function(j,k){
+	var line=paper.getById(k.id);
+	line.attr({stroke:k.color,'stroke-dasharray':k.style,'stroke-width':k.width})
+})
+
+/////////////////////////////
+},300*allIcons.length)//有动画，延迟画线  -end
+
+
+//var alertAnimate = 
+var alertCircle=paper.circle(100,100,0);
+alertCircle.attr({'stroke-width':2,stroke:'#cc0000'});
+
+//alert messgae --------------duplicate enough circles for icon
+var circleSet=paper.set();
+
+$.each(allIcons,function(j,k){
+	var oCircle=alertCircle.clone();
+	oCircle.id='alert_'+k.id;
+	var bb=k.getBBox();
+	var maxRadius=bb.width>bb.height?bb.width:bb.height;
+	oCircle.attr({cx:bb.x+bb.width*0.5,cy:bb.y+bb.height*0.5,r:maxRadius*0.5});
+	if(alertAnimation){
+	var alertAnimate = Raphael.animation({opacity:0,transform:'s2'},1000,'easeOut',function(){	});
+	oCircle.toBack().animate(alertAnimate.repeat(Infinity))
+	}
+	
+	//oCircle.pause();
+	oCircle.toBack().hide();
+	circleSet.push(oCircle);
+})
+
+setInterval(function(){
+////	
+
+$.ajax({
+	url:'topo-alert.php',
+	cache:false,
+	success:function(d,e){
+		circleSet.hide();
+		
+		if(d!=''){
+		eval('var d="'+d+'"');
+		d=d.split(',');			
+		$.each(d,function(j,k){
+			var obj=paper.getById(k);
+			var circle=paper.getById('alert_'+k);			
+			
+			if(Raphael.type.toLowerCase()=='vml'){
+			//	circle.animate(alertAnimate.repeat(Infinity))
+			}
+			//console.log(circle.status()[0].status)
+			//circle.resume()
+			//console.log(circle.status())
+			circle.show()
+		})
+		
+		
+		}
+	}
+})
+
+////
+},alertInterval*1000)
+
+var backRect=paper.rect(0,0,3000,3000);
+backRect.toBack();
+backRect.attr({'fill-opacity':0,fill:'#ffffff','stroke-width':0})
+
+backRect.mouseover(function(){
+	$('#tipsDiv').hide();
+})
+
+
+$('#toLeft').mouseenter(function(){
+	$(this).parent().css({'background-position':'0 -176px'})	
+})
+
+$('#toRight').mouseenter(function(){
+	$(this).parent().css({'background-position':'0 -88px'})	
+})
+
+$('#toTop').mouseenter(function(){
+	$(this).parent().css({'background-position':'0 -44px'})	
+})
+
+$('#toBottom').mouseenter(function(){
+	$(this).parent().css({'background-position':'0 -132px'})	
+})
+
+$('#gToolbar_move').mouseleave(function(){
+	$(this).css({'background-position':'0 0'})	
+})
+
+$('#gToolbar_move a').click(function(){
+	var c=$('#gCanvas');
+	var pos=c.position();
+	var obj=$(this);	
+	if(obj.attr('id')=='toRight'){
+		if(pos.left<-1*canvasSize.width){
+			//c.css({left:})
+			return false;
+		}
+		//c.stop().animate({left:'-='+controlStep},200,'swing')
+		c.css({left:'-='+controlStep})
+	}else if(obj.attr('id')=='toLeft'){
+		if(pos.left>=0){
+			//c.css({left:0})
+			return false
+		;}
+		//c.stop().animate({left:'+='+controlStep},200,'swing')
+		c.css({left:'+='+controlStep})
+	}else if(obj.attr('id')=='toTop'){
+		if(pos.top>=0){return false;}
+		//c.stop().animate({top:'+='+controlStep},200,'swing')
+		c.css({top:'+='+controlStep})
+	}else if(obj.attr('id')=='toBottom'){
+		if(pos.top<=-1*canvasSize.height){return false;}
+		//c.stop().animate({top:'-='+controlStep},200,'swing')
+		c.css({top:'-='+controlStep})
+	}
+	
+})
+
+//zoom levels
+var zoomLevel=1;
+var zoomStep=0.1;
+
+$('#zoom2small').click(function(){
+	zoomLevel+=zoomStep;
+	paper.setViewBox(0,0,canvasSize.width*zoomLevel,canvasSize.height*zoomLevel, false);
+	
+})
+
+$('#zoom2big').click(function(){
+	zoomLevel-=zoomStep;
+	paper.setViewBox(0,0,canvasSize.width*zoomLevel,canvasSize.height*zoomLevel, false)
+})
+
+$('#zoom2ori').click(function(){
+	zoomLevel=1;
+	paper.setViewBox(0,0,canvasSize.width*zoomLevel,canvasSize.height*zoomLevel, false)
+})
+
+//mousewheel
+$('html').mousewheel(function(e,delta){
+	if(delta>0){
+		$('#zoom2big').trigger('click')
+	}else{
+		$('#zoom2small').trigger('click')
+		}
+}).mouseup(function(e){
+	if(e.button==1){
+		$('#zoom2ori').trigger('click')
+	}	
+})
+
+//ie setViewbox has bug! style zoom also has bug!
+//$('#gCanvas').css({zoom:1.5})
+
+if($.browser.msie&&$.browser.version<7){
+	$('#gToolbar_zoom').hide()
+}
+
+var thisbb=paper.getById('001').getBBox();
+var alertIcon=paper.image('themes/default/images/question.png',thisbb.x+thisbb.width-8,thisbb.y-8,16,16)
+
+var bounceAni = Raphael.animation({transform:'t0,-5'},500,'bounce');
+if(alertAnimation2){
+	alertIcon.animate(bounceAni.repeat(Infinity))
+}
+
+/////////////////////////////
+})
+</script>
+</head>
+<body>
+<div id="gContainer"><div id="gCanvas"></div></div>
+<div id="tipsDiv"></div>
+<div id="gToolbar_move"><a title="左" id="toLeft" href="javascript:void(0);"></a><a title="右" id="toRight" href="javascript:void(0);"></a><a title="上" id="toTop" href="javascript:void(0);"></a><a title="下" id="toBottom" href="javascript:void(0);"></a></div>
+<div id="gToolbar_zoom"><a title="缩小" id="zoom2big" href="javascript:void(0);"></a><a title="放大" id="zoom2small" href="javascript:void(0);"></a><a title="100%" id="zoom2ori" href="javascript:void(0);"></a></div>
+
+报警改造成 json 以便输出更多信息
+报警动画开关
+icon wheel 和 html wheel 冲突
+移动 有bug : drag 非整数，移动非整数
+isBBoxIntersect multi selection
+
+</body>
+</html>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<anychart>
+	<margin top="-20" bottom="-30" left="-8" right="-8" />
+  <settings>
+    <animation enabled="true" />
+  </settings>
+  <gauges>
+    <gauge>
+      <chart_settings>	  
+	  <chart_background>
+			<border  enabled="0"></border>
+			 <fill enabled="false" />
+		</chart_background>
+        <title enabled="false">
+          <text><![CDATA[]]></text>
+        </title>
+      </chart_settings>
+      <circular>
+        <axis radius="42" start_angle="85" sweep_angle="190" size="3">
+          <labels align="Outside" padding="2">
+            <format><![CDATA[{%Value}{numDecimals:0}]]></format>
+          </labels>
+		  <scale_bar enabled="true" >
+            <fill color="#292929" />
+          </scale_bar>
+          <major_tickmark align="Center" length="10" padding="0" />
+          <minor_tickmark enabled="false" />
+          <color_ranges>
+            <color_range start="0" end="100" align="Inside" start_size="15" end_size="15" padding="6">
+              <fill type="Gradient">
+                <gradient>
+                  <key color="Red" />
+                  <key color="Yellow" />
+                  <key color="Green" />
+                </gradient>
+              </fill>
+              <border enabled="true" color="Black" opacity="0.4" />
+            </color_range>
+          </color_ranges>
+        </axis>
+        <frame enabled="false">
+          <inner_stroke enabled="" />
+          <outer_stroke enabled="false" />
+          <background>
+            <fill type="Gradient">
+              <gradient angle="45">
+                <key color="#FDFDFD" />
+                <key color="#F7F3F4" />
+              </gradient>
+            </fill>
+            <border enabled="false" color="#cc0000" />
+          </background>
+          <effects enabled="true" />
+        </frame>
+        <pointers>
+          <pointer value="0" name="p1" id="p1">
+            <label enabled="0" under_pointers="false">
+              <position placement_mode="Byrectangle" x="0" y="100" />
+              <format><![CDATA[CPU使用率 {%Value}{numDecimals:0}%]]></format>
+              <background enabled="false" />
+			  <font size="12" />
+            </label>
+            <needle_pointer_style thickness="7" point_thickness="5" point_radius="3">
+              <fill color="Rgb(230,230,230)" />
+              <border color="Black" opacity="0.7" />
+              <effects enabled="true">
+                <bevel enabled="true" distance="2" shadow_opacity="0.6" highlight_opacity="0.6" />
+                <drop_shadow enabled="true" distance="1" blur_x="1" blur_y="1" opacity="0.4" />
+              </effects>
+              <cap>
+                <background>
+                  <fill type="Gradient">
+                    <gradient type="Linear" angle="45">
+                      <key color="#D3D3D3" />
+                      <key color="#6F6F6F" />
+                    </gradient>
+                  </fill>
+                  <border color="Black" opacity="0.9" />
+                </background>
+                <effects enabled="true">
+                  <bevel enabled="true" distance="2" shadow_opacity="0.6" highlight_opacity="0.6" />
+                  <drop_shadow enabled="true" distance="1.5" blur_x="2" blur_y="2" opacity="0.4" />
+                </effects>
+              </cap>
+            </needle_pointer_style>
+            <animation enabled="true" start_time="0	" duration="0.7" interpolation_type="Bounce" />
+          </pointer>
+        </pointers>
+      </circular>
+    </gauge>
+  </gauges>
+</anychart>

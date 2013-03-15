@@ -1,0 +1,57 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<title>设备信息</title>
+<script type="text/javascript" src="themes/default/jquery-1.7.2.min.js"></script>
+<script type="text/javascript" src="themes/default/jquery-ui-1.8.18.custom.min.js"></script>
+<script type="text/javascript" src="themes/default/anychart.js"></script>
+<script type="text/javascript" src="themes/default/html5.js"></script>
+<script type="text/javascript" src="themes/default/main.js"></script>
+<style type="text/css">@import url(themes/default/main.css);</style>
+<style type="text/css">
+body {margin:8px;}
+#gContainer {width:780px;}/*页面容器的宽度！*/
+td.t {white-space:nowrap;text-align:right;color:#777;}
+th.aleft {text-align:left;}
+</style>
+<script type="text/javascript">
+jQuery(function(){
+/////////////////////////////
+
+$('.gTab li').hoverClass('hover').click(function(){
+	var par=$(this).parent();
+	par.find('li').removeClass('current');
+	$(this).addClass('current');
+	var tabCon=par.parent().find('.tabContent');
+	tabCon.find('li').removeClass('current');	
+	tabCon.find('li:eq('+$(this).index()+')').addClass('current');
+})
+
+/////////////////////////////
+})
+</script>
+</head>
+<body><div id="gContainer">
+
+<ul class="gTab">
+    <li class="current">设备信息</li>
+    <li>端口列表</li>
+    <li>主要信息</li>
+</ul>
+
+<ul class="tabContent">
+    <li class="current">
+    	<table class="gGrid"><tbody><tr><td class="t">设备名称：</td><td>testangell</td><td class="t">设备别名：</td><td>西安安智科技有限公司西安安智科技有限公司西安安智科技有限公司123 </td></tr><tr><td class="t">设备IP：</td><td>192.168.1.50</td><td class="t">设备类型：</td><td>三层交换机</td></tr><tr><td class="t">设备型号：</td><td>C3550</td><td class="t">设备类别：</td><td>局域网核心设备</td></tr><tr><td class="t">日志类别：</td><td></td><td class="t">所属区域：</td><td>测试区域</td></tr><tr><td class="t">所属机房：</td><td>fgfdgf</td><td class="t">描述：</td><td>西安安智科西安安智科西安安智科西安安智科西安安智科西安安智科西安安智科西安安智科西安安智科西安安智科西安安智科西安安智科西安11  </td></tr></tbody></table>
+    </li>
+    <li>
+    	<table class="gGrid"><thead><tr><th class="aleft">索引</th><th class="aleft">端口名称</th><th class="aleft">类型</th><th class="aleft">IP地址</th><th class="aleft">子网掩码</th><th class="aleft">描述</th></tr></thead><tbody><tr><td>1</td><td></td><td>VLan</td><td></td><td>0.0.0.0</td><td>Vlan1</td></tr><tr><td>5001</td><td></td><td>VLan</td><td></td><td>0.0.0.0</td><td>Port-channel1   </td></tr><tr><td>5002</td><td></td><td>VLan</td><td></td><td>0.0.0.0</td><td>Port-channel2   </td></tr><tr><td>5003</td><td></td><td>VLan</td><td></td><td>0.0.0.0</td><td>Port-channel3   </td></tr><tr><td>10001</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/1 </td></tr><tr><td>10002</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/2 </td></tr><tr><td>10003</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/3 </td></tr><tr><td>10004</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/4 </td></tr><tr><td>10005</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/5 </td></tr><tr><td>10006</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/6 </td></tr><tr><td>10007</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/7 </td></tr><tr><td>10008</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/8 </td></tr><tr><td>10009</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/9 </td></tr><tr><td>10010</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/10</td></tr><tr><td>10011</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/11</td></tr><tr><td>10012</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/12</td></tr><tr><td>10013</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/13</td></tr><tr><td>10014</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/14</td></tr><tr><td>10015</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/15</td></tr><tr><td>10016</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/16</td></tr><tr><td>10017</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/17</td></tr><tr><td>10018</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/18</td></tr><tr><td>10019</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/19</td></tr><tr><td>10020</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/20</td></tr><tr><td>10021</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/21</td></tr><tr><td>10022</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/22</td></tr><tr><td>10023</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/23</td></tr><tr><td>10024</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>FastEthernet0/24</td></tr><tr><td>10101</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>GigabitEthernet0/1</td></tr><tr><td>10102</td><td></td><td>以太网</td><td></td><td>0.0.0.0</td><td>GigabitEthernet0/2</td></tr><tr><td>10501</td><td></td><td>VLan</td><td></td><td>0.0.0.0</td><td>Null0</td></tr></tbody></table>
+   	</li>
+    <li>
+    	<table class="gGrid"><tbody><tr><td class="t">管理员：</td><td>西安安智科技有限公司西安安智科技有限公司西安安智科技有限公司123 </td><td class="t">联系方式：</td><td>西安安智科技有限公司西安安智科技有限公司西安安智科技有限公司123 </td></tr><tr><td class="t">资产编码：</td><td>西安安智科技有限公司西安安智科技有限公司西安安智科技有限公司123 </td><td class="t">安装位置：</td><td>西安安智科技有限公司西安安智科技有限公司西安安智科技有限公司123 </td></tr><tr><td class="t">投运时间：</td><td>2012-08-18</td><td class="t">供应商：</td><td>西安安智科技有限公司西安安智科技有限公司西安安智科技有限公司123 </td></tr><tr><td class="t">厂商：</td><td></td><td class="t">维保到期时间：</td><td>2012-07-11</td></tr><tr><td class="t">设备用途：</td><td>西安安智科技有限公司西安安智科技有限公司西安安智科技有限公司123 </td></tr></tbody></table>
+    </li>
+</ul>
+
+
+</div></body>
+</html>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<anychart>
+	<margin all="-10" bottom="0" />
+  <settings>
+    <animation enabled="true" />
+  </settings>
+  <gauges>
+    <gauge>
+      <chart_settings>
+        <title padding="" enabled="0">
+          <text><![CDATA[/dev/mapper/centos_root]]></text>
+        </title>
+		<chart_background>
+			<border  enabled="0"></border>
+			 <fill enabled="false" />
+		</chart_background>
+      </chart_settings>
+      <linear orientation="Vertical">
+        <axis size="45" position="50" enabled="0">
+          <scale_bar enabled="true" />   
+          <labels>
+            <format><![CDATA[{%Value}{numDecimals:0}%]]></format>
+          </labels>
+        </axis>
+        <pointers>
+          <pointer type="Tank" value="0" name="bkColor" color="#cccccc">
+            <label enabled="true">
+              <position placement_mode="ByPoint" x="50" y="110" valign="Center" />
+              <format><![CDATA[{%Value}{numDecimals:1}%]]></format>
+			  <font size="12" color="#000000" bold="true" />
+              <background enabled="0">
+			  	<border  enabled="0"></border>
+                <effects enabled="false" />
+              </background>
+            </label>
+            <animation enabled="true" start_time="0" duration="0.3" interpolation_type="Circular" />
+          </pointer>
+        </pointers>
+      </linear>
+    </gauge>
+  </gauges>
+</anychart>

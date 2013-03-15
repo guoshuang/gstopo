@@ -1,0 +1,91 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<title>拓扑显示</title>
+<script type="text/javascript" src="themes/default/jquery-1.7.2.min.js"></script>
+<script type="text/javascript" src="themes/default/jquery-ui-1.8.18.custom.min.js"></script>
+<script type="text/javascript" src="themes/default/gex.js"></script>
+<script type="text/javascript" src="themes/default/raphael-min.js"></script>
+<style type="text/css">@import url(themes/default/main.css);</style>
+<div id="test">1111111</div>
+<div id="contextmenu">1111111</div>
+<div id="paper" style="width: 600px; height: 600px; margin: 0 auto;"></div>
+
+
+
+<script type="text/javascript">
+    
+    var a = 600;
+    var paperElement = document.getElementById("paper");
+    var paper = Raphael(paperElement,a,a);
+    
+    //draw funky circles
+    var i = 300;
+    while(i > 0) {
+        paper.circle(300,300,i).attr({stroke: "none", fill: Raphael.getColor()});
+        i -= 20;
+    }
+    
+    var bbox = {x: 0, y: 0, width: a, height: a};
+    var viewbox = [0,0,a,a];
+    var zoom = 1;
+    
+    /* transforms screen coordinates into paper coordinates */
+    function transformEventCoords(event) {
+        return {
+            x : event.clientX - paperElement.offsetLeft,
+            y : event.clientY - paperElement.offsetTop
+        };
+    }
+    
+    function doZoom(coords, factor) {
+        
+        //transform real coordinates into viewbox coordinates
+        x = viewbox[0] + coords.x / zoom; 
+        y = viewbox[1] + coords.y / zoom;
+        
+
+        var z = ((zoom || 1) * factor) || 1;
+        if (z < 1 || z > 16) {
+            return;
+        }
+        zoom = z;
+
+        //zoom viewbox dimensions
+        viewbox[2] = bbox.width / zoom;
+        viewbox[3] = bbox.height / zoom;
+
+        //transform coordinates to new viewbox coordinates
+        viewbox[0] = x - coords.x / zoom;
+        viewbox[1] = y - coords.y / zoom;
+        
+        paper.setViewBox.apply(paper, viewbox);
+    }
+    
+    paperElement.addEventListener("click", function(event) {
+        doZoom(transformEventCoords(event), 2); //zoom in
+    });
+    
+$(function(){
+////////////
+
+$('#test').contextmenu(function(){
+	//console.log(31231)	
+	$('#contextmenu').show();
+	return false;
+})
+
+$('html').click(function(){
+	$('#contextmenu').hide();
+})
+
+///////////////////
+})
+	
+</script>
+
+
+<style>
+#contextmenu {position:absolute;left:100px;top:100px;background:red;display:none;}
+</style>

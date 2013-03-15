@@ -1,0 +1,575 @@
+﻿<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8">
+<title>拓扑显示</title>
+<script type="text/javascript" src="themes/default/jquery-1.7.2.min.js"></script>
+<script type="text/javascript" src="themes/default/jquery-ui-1.8.18.custom.min.js"></script>
+<script type="text/javascript" src="themes/default/gex.js"></script>
+<script type="text/javascript" src="themes/default/raphael-min.js"></script>
+<style type="text/css">@import url(themes/default/main.css);</style>
+<style type="text/css">
+html,body {width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:#eee;}
+#gContainer {height:100%;position:relative;}
+#gCanvas { background: url(themes/default/images/grid2.gif);position:absolute;left:0;top:0;}
+</style>
+<script type="text/javascript">
+var alertInterval=10;// 警告ajax获取间隔时间 秒
+var canvasSize={width:3000,height:3000};//canvas size define
+var alertAnimation=true;//打开动画，浏览器比较卡
+var alertAnimation2=true;//question animation
+var controlStep=100;//move step
+var anim_icon=400;//图标出现时间 毫秒
+var anim_icon_delay=150;//图标依次出现的间隔 毫秒
+var start_animation=true;//开始是否播放动画
+
+//Static topo icons checklist -- category of Network
+var topoTypeList;
+$.ajax({
+	url:'topo_type_list.php',
+	data:{type:'network'},
+	async:false,
+	success:function(d){
+		eval('topoTypeList='+d);	
+	}
+});
+
+//topo info from system
+var topoJson;
+$.ajax({
+	url:'topo_json.php',
+	data:{id:123},//某某拓扑的数据
+	async:false,
+	success:function(d){
+		eval('topoJson='+d);	
+	}
+});
+
+//topo info from frontend
+var topoJsonPos;
+$.ajax({
+	url:'topo_json_pos.php',
+	data:{id:123},//某某拓扑的位置信息（编辑过的）
+	async:false,
+	success:function(d){
+		eval('topoJsonPos='+d);	
+	}
+});
+
+function showTips(x,y,content){
+	$('#tipsDiv').css({left:x,top:y}).empty().append(content).show();
+}
+
+function hideDivs(){
+	$('#tipsDiv').hide();
+	$('#contextMenu').hide();
+}
+
+function hideZoomr(){
+	$('#zoomr').hide();
+}
+
+function zoomrAnimate2big(){
+	$('#zoomr .zoomr').show();
+	$('#zoomr .zoomr').each(function(j,k){
+		if(j==0){
+			$(this).css({left:20,top:20,backgroundPosition:'0 -433px',opacity:0})	
+			$(this).stop().animate({left:0,top:0,opacity:1},500,'swing',hideZoomr)	
+		}else if(j==1){
+			$(this).css({right:20,top:20,backgroundPosition:'-7px -433px',opacity:0})	
+			$(this).stop().animate({right:0,top:0,opacity:1},500,'swing',hideZoomr)	
+		}else if(j==2){
+			$(this).css({left:20,bottom:20,backgroundPosition:'0 -440px',opacity:0})	
+			$(this).stop().animate({left:0,bottom:0,opacity:1},500,'swing',hideZoomr)	
+		}else if(j==3){
+			$(this).css({right:20,bottom:20,opacity:0})	
+			$(this).stop().animate({right:0,bottom:0,opacity:1},500,'swing',hideZoomr)	
+		}
+	})
+}
+
+function zoomrAnimate2small(){
+	$('#zoomr .zoomr').show();
+	$('#zoomr .zoomr').each(function(j,k){
+		if(j==0){
+			$(this).css({left:0,top:0,backgroundPosition:'-7px -440px',opacity:0})	
+			$(this).stop().animate({left:20,top:20,opacity:1},500,'swing',hideZoomr)	
+		}else if(j==1){
+			$(this).css({right:0,top:0,backgroundPosition:'0 -440px',opacity:0})	
+			$(this).stop().animate({right:20,top:20,opacity:1},500,'swing',hideZoomr)	
+		}else if(j==2){
+			$(this).css({left:0,bottom:0,backgroundPosition:'-7px -433px',opacity:0})	
+			$(this).stop().animate({left:20,bottom:20,opacity:1},500,'swing',hideZoomr)	
+		}else if(j==3){
+			$(this).css({right:0,bottom:0,backgroundPosition:'0 -433px',opacity:0})	
+			$(this).stop().animate({right:20,bottom:20,opacity:1},500,'swing',hideZoomr)	
+		}
+	})
+}
+
+var allIcons=[];
+
+jQuery(function($){
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+$('#zoomr .zoomr').each(function(j,k){
+	if(j==0){
+		$(this).css({left:0,top:0,backgroundPosition:'0 -433px'})	
+	}else if(j==1){
+		$(this).css({right:0,top:0,backgroundPosition:'-7px -433px'})	
+	}else if(j==2){
+		$(this).css({left:0,bottom:0,backgroundPosition:'0 -440px'})	
+	}else if(j==3){
+		$(this).css({right:0,bottom:0,backgroundPosition:'-7px -440px'})	
+	}
+})
+
+if($.cookie('gCookie')=='{alertAnimation:false,alertAnimation2:false,start_animation:false}'){
+	$('#stopAni').addClass('stopAnimation');
+}
+
+$('#stopAni').click(function(){
+	if($.cookie('gCookie')=='{alertAnimation:false,alertAnimation2:false,start_animation:false}'){
+		$.cookie('gCookie','{alertAnimation:true,alertAnimation2:true,start_animation:true}',{expires:30})
+		$(this).removeClass('stopAnimation');
+	}else{
+		$.cookie('gCookie','{alertAnimation:false,alertAnimation2:false,start_animation:false}',{expires:30})
+		$(this).addClass('stopAnimation');
+	}
+})
+
+eval('var gCookie='+$.cookie('gCookie'));
+
+if(gCookie!=null){
+	//if has cookie	
+	alertAnimation=gCookie.alertAnimation;
+	alertAnimation2=gCookie.alertAnimation2;
+	start_animation=gCookie.start_animation
+}
+
+$('#gCanvas').css({width:canvasSize.width,height:canvasSize.height}).draggable({
+	cursor:'pointer',
+	//delay:200,
+	//containment:[-1*canvasSize.width,-1*canvasSize.height,0,0],
+	//cancel:'image',
+	start:function(){
+		$('#gCanvas').attr('data-isDragging',1)
+		hideDivs();
+	}
+})
+
+var paper = new Raphael(document.getElementById('gCanvas'), '100%', '100%');
+var allLines=paper.set();
+var allTexts=paper.set();
+
+//draw icons initial
+$.each(topoJson.icons,function(j,k){
+	var icon=paper.image(topoTypeList[k.type].src,0,0,topoTypeList[k.type].w,topoTypeList[k.type].h);//默认左上角，图标默认大小，这是那种没有被 编辑 过位置 的图标
+	icon.id=k.id;
+	icon.data('title',k.name);
+	icon.data('url',k.url);
+	icon.data('sid',k.sid);
+	allIcons.push(icon);
+	
+	if(k.url)icon.attr({cursor:'pointer'})
+	icon.mouseover(function(e){
+		showTips(e.clientX,e.clientY,k.tips)	;
+		this.attr({transform:'s1.1'})
+		//e.cancelBubble=true;
+	})
+		
+	icon.mouseout(function(e){
+		this.attr({transform:'s1'})
+	}).click(function(){
+		var isDragging=$('#gCanvas').attr('data-isDragging');
+		if(isDragging==1){
+			$('#gCanvas').attr('data-isDragging',0);
+		}else{
+			if(icon.data('url')){
+				window.open(icon.data('url'))	
+			}
+		}
+		
+		
+	})
+	
+	$(icon.node).bind("contextmenu", function(e){
+		$('#tipsDiv').hide();
+		$('#contextMenu').empty().append('<ul data-id="'+icon.id+'" data-title="'+icon.attr('title')+'"><li class="property1" onclick="alert(1)">属性1</li><li class="property2">属性2</li></ul>')
+		$('#contextMenu').css({left:e.clientX,top:e.clientY}).show();
+		return false;
+	});
+	
+})
+
+$('#contextMenu').click(function(){
+	$(this).hide();	
+})
+
+//move icons to their edited position
+$.each(topoJsonPos.icons,function(j,k){
+	var icon=paper.getById(k.id);
+	if(icon!=null){//万一前后台 icon 数量不对应;没有位置的 icon 显示在左上角
+		
+		//如果修改过位置和大小的话
+		if(k.w&&k.h){
+			icon.attr({x:k.x,y:k.y,width:k.w,height:k.h});
+			
+			//icon.attr({opacity:0});
+			//var anim = Raphael.animation({x:k.x,y:k.y,width:k.w,height:k.h,opacity:1},anim_icon,'bounce');
+			//icon.animate(anim.delay(anim_icon_delay*j))
+		}else{
+			//这种情况应该不会出现，edit get the full format!
+			icon.attr({x:k.x,y:k.y,width:64,height:64});
+		}
+	}
+})
+
+//draw lines
+//setTimeout(function(){//有动画，延迟画线 -start
+
+/////////////////////////////
+$.each(allIcons,function(j,k){
+	var bb=k.getBBox();
+	var text=paper.text(bb.x+(bb.width*0.5),bb.y+bb.height,k.data('title'))
+	text.attr({'font-size':12,'text-anchor':'center'});
+	//文字 中心位置 位于icon 左右：中间 上下：下边沿，然后向下 半个 文字高度+4
+	text.attr({'transform':'t0,'+(text.getBBox().height*0.5+4)})	
+	allTexts.push(text);
+})
+
+$.each(topoJson.lines,function(j,k){
+	var from=paper.getById(k.from);
+	var fx=from.attr('x')+from.attr('width')*0.5;
+	var fy=from.attr('y')+from.attr('height')*0.5;
+	var to=paper.getById(k.to);
+	var tx=to.attr('x')+to.attr('width')*0.5;
+	var ty=to.attr('y')+to.attr('height')*0.5;
+	var line=paper.path('M'+fx+','+fy+'L'+tx+','+ty);
+	line.id=k.from+'_'+k.to;
+	line.toBack();
+	allLines.push(line);
+	line.attr('title',from.data('title')+' -> '+to.data('title'));
+	
+	if(k.url){
+		line.attr('cursor','pointer')	;
+		line.mouseover(function(){
+			this.data('stroke-width',this.attr('stroke-width'))
+			this.data('stroke',this.attr('stroke'))
+			this.attr({'stroke-width':this.attr('stroke-width')*3,stroke:'#cc0000'})	
+		}).mouseout(function(){
+			this.attr({'stroke-width':this.data('stroke-width'),stroke:this.data('stroke')})	
+		}).click(function(){		
+			window.open(k.url+'?from='+from.data('sid')+'&to='+to.data('sid'));		
+		})
+	}else{
+		line.hover(function(){
+			this.attr('opacity',0.6)
+		},function(){
+			this.attr('opacity',1)
+		})	
+	}
+	
+	
+		
+})
+
+//modify line style
+$.each(topoJsonPos.lines,function(j,k){
+	var line=paper.getById(k.id);
+	line.attr({stroke:k.color,'stroke-dasharray':k.style,'stroke-width':k.width})
+})
+
+//var alertAnimate = 
+var alertCircle=paper.circle(100,100,0);
+alertCircle.attr({'stroke-width':2,stroke:'#cc0000'});
+
+//alert messgae --------------duplicate enough circles for icon
+var circleSet=paper.set();
+var questionSet=paper.set();
+
+$.each(allIcons,function(j,k){
+	var oCircle=alertCircle.clone();
+	oCircle.id='alert_'+k.id;
+	var bb=k.getBBox();
+	var maxRadius=bb.width>bb.height?bb.width:bb.height;
+	oCircle.attr({cx:bb.x+bb.width*0.5,cy:bb.y+bb.height*0.5,r:maxRadius*0.5});
+	if(alertAnimation){
+	var alertAnimate = Raphael.animation({opacity:0,transform:'s2'},1000,'easeOut',function(){	});
+	oCircle.toBack().animate(alertAnimate.delay(3000).repeat(Infinity))
+	}
+	
+	//oCircle.pause();
+	oCircle.toBack().hide();
+	circleSet.push(oCircle);
+	
+	//var thisbb=paper.getById('001').getBBox();
+	
+	var questionIcon=paper.image('themes/default/images/question.png',bb.x+bb.width-8,bb.y-8,16,16)
+	questionIcon.id='ques_'+k.id;
+	questionSet.push(questionIcon)
+	
+	var bounceAni = Raphael.animation({transform:'t0,-5'},500,'bounce');
+	if(alertAnimation2){
+		questionIcon.animate(bounceAni.repeat(Infinity))
+	}
+	questionSet.hide()
+	
+})
+
+/////////////////////////////
+//},(anim_icon-anim_icon_delay)*(allIcons.length-1))//有动画，延迟画线  -end
+
+//setInterval(function(){
+////	
+
+var alertTimer=null;
+function ajax4alert(){
+	var request=$.ajax({
+		url:'topo-alert.php',
+		cache:false,
+		success:function(d,e){
+			circleSet.hide();
+			questionSet.hide()
+			if(d!=''){
+			eval('var d="'+d+'"');
+			d=d.split(',');			
+			$.each(d,function(j,k){
+				var obj=paper.getById(k);
+				var circle=paper.getById('alert_'+k);	
+				var question=	paper.getById('ques_'+k);	
+				circle.show();
+				question.show();
+			})
+			}
+			alertTimer=setTimeout(ajax4alert,alertInterval*1000);
+		}
+	})
+	
+	//prevent ram leak 
+	request.onreadystatechange = null;
+	request.abort = null;
+	request = null;
+}
+
+ajax4alert();
+
+////
+//},alertInterval*1000)
+
+var backRect=paper.rect(0,0,canvasSize.width,canvasSize.height);
+backRect.toBack();
+backRect.attr({'fill-opacity':0,fill:'#ffffff','stroke-width':0})
+
+backRect.mouseover(hideDivs)
+
+$('#toLeft').mouseenter(function(){
+	$(this).parent().css({'background-position':'0 -176px'})	
+})
+
+$('#toRight').mouseenter(function(){
+	$(this).parent().css({'background-position':'0 -88px'})	
+})
+
+$('#toTop').mouseenter(function(){
+	$(this).parent().css({'background-position':'0 -44px'})	
+})
+
+$('#toBottom').mouseenter(function(){
+	$(this).parent().css({'background-position':'0 -132px'})	
+})
+
+$('#gToolbar_move').mouseleave(function(){
+	$(this).css({'background-position':'0 0'})	
+})
+
+$('#gToolbar_move a').click(function(){
+	var c=$('#gCanvas');
+	var pos=c.position();
+	var obj=$(this);	
+	if(obj.attr('id')=='toRight'){
+		c.stop().animate({left:'+='+controlStep},200,'swing')
+	}else if(obj.attr('id')=='toLeft'){
+		c.stop().animate({left:'-='+controlStep},200,'swing')
+	}else if(obj.attr('id')=='toTop'){
+		c.stop().animate({top:'-='+controlStep},200,'swing')
+	}else if(obj.attr('id')=='toBottom'){
+		c.stop().animate({top:'+='+controlStep},200,'swing')
+	}
+	
+})
+
+//zoom levels
+
+
+$('#zoom2small').click(function(){
+	if(zoomLevel>=3){alert('已经最小了');return false;}
+	zoomLevel+=zoomStep;
+	paper.setViewBox(0,0,canvasSize.width*zoomLevel,canvasSize.height*zoomLevel, false);
+})
+
+$('#zoom2big').click(function(){
+	if(zoomLevel-zoomStep<=0){alert('已经最大了！');return false;}
+	zoomLevel-=zoomStep;
+	paper.setViewBox(0,0,canvasSize.width*zoomLevel,canvasSize.height*zoomLevel, false)
+})
+
+$('#zoom2original').click(function(){
+	zoomLevel=1;
+	zoomStep=0.1;
+	lastSize=3000;
+	paper.setViewBox(0,0,canvasSize.width*zoomLevel,canvasSize.height*zoomLevel, false)
+	$('#gCanvas').css({left:0,top:0,marginLeft:0,marginTop:0})
+})
+
+var zoomLevel=1;
+var zoomStep=0.1;
+var lastSize=3000;
+var lastZoomLevel;
+
+$('html').mousewheel(function(e,delta){
+	$('#zoomr').css({left:e.clientX-30,top:e.clientY-30}).show();
+	
+	if(delta>0){
+		$('#zoom2big').trigger('click');	
+		zoomrAnimate2big();
+	}else{
+		$('#zoom2small').trigger('click')
+		zoomrAnimate2small();
+	}
+	
+	var newSize = canvasSize.width/zoomLevel;
+		
+	var cx = e.clientX/zoomLevel;
+	var cy = e.clientY/zoomLevel;
+	
+	var npx = (e.clientX/lastSize) * newSize;
+	var npy =  (e.clientY/lastSize) * newSize;
+		
+	$('#gCanvas').css({marginLeft:(npx-cx)})
+	$('#gCanvas').css({marginTop:(npy-cy)})
+	
+	lastSize=canvasSize.width/(zoomLevel);
+	lastX = npx
+	lastY = npy
+	lastZoomLevel = zoomLevel;
+	
+}).mouseup(function(e){
+	if(e.button==1){
+		$('#zoom2ori').trigger('click')
+	}	
+})
+
+//ie setViewbox has bug! style zoom also has bug!
+//$('#gCanvas').css({zoom:1.5})
+
+if($.browser.msie&&$.browser.version<8){
+	$('#zoom2big').hide()
+	$('#zoom2small').hide()
+	$('#zoom2original').css({marginTop:'-50px'})
+	$('#stopAni').css({marginTop:'-50px'})
+}
+
+//animate start
+/*
+if(start_animation){
+
+	allTexts.hide();
+	allLines.hide();	
+	$.each(allIcons,function(j,k){
+		var bb=k.getBBox();
+		var kx=bb.x;
+		var ky=bb.y
+		var kw=bb.width;
+		var kh=bb.height;
+		k.attr({opacity:0,x:0,y:0});
+		var anim = Raphael.animation({x:kx,y:ky,width:kw,height:kh,opacity:1},anim_icon,'bounce');
+		k.animate(anim.delay(anim_icon_delay*j));
+	})
+	$.each(allTexts,function(j,k){
+		k.attr({opacity:0}).show();
+		var anim = Raphael.animation({opacity:1},anim_icon,'linear');
+		k.animate(anim.delay(anim_icon_delay*j));
+	})
+	setTimeout(function(){
+		allLines.show();	
+	},(anim_icon-anim_icon_delay)*(allIcons.length-1))	
+
+}
+*/
+
+var topoTitle=paper.text(0,0,topoJson.title.name);
+topoTitle.id='topoTitle';
+
+topoTitle.attr({'text-anchor':'start',fill:'90-'+topoJson.title.endcolor+'-'+topoJson.title.startcolor,"font-size":topoJson.title.size,'font-family':topoJson.title.fontFamily,x:topoJson.title.x,y:topoJson.title.y,transform:'r'+topoJson.title.rotate}) 
+topoTitle.toBack();
+
+//动画效果2
+if(start_animation){
+///////////////////
+
+var owidth=$(window).width();
+var oheight=$(window).height();
+
+paper.forEach(function(k){
+	if(k.type=='image'||k.type=='text'||k.type=='path'){
+		k.hide();
+	}
+	
+	if(k.type=='image'){
+		k.data('pos-x',k.attr('x'))
+		k.data('pos-y',k.attr('y'))
+		k.attr({x:owidth*Math.random(),y:oheight*Math.random(),opacity:0}).show();
+		k.animate({x:k.data('pos-x'),y:k.data('pos-y'),opacity:1},1500,'bounce')
+	}	
+})
+
+setTimeout(function(){
+	allTexts.show();
+	allLines.show();	
+	paper.getById('topoTitle').show();
+},2000)
+
+///////////////////	
+}
+
+
+/////////////////////////////
+})
+</script>
+</head>
+<body>
+<div id="gContainer"><div id="gCanvas"></div></div>
+<div id="tipsDiv"></div>
+<div id="gToolbar_move">
+	<a title="左" id="toLeft" href="javascript:void(0);"></a>
+    <a title="右" id="toRight" href="javascript:void(0);"></a>
+    <a title="上" id="toTop" href="javascript:void(0);"></a>
+    <a title="下" id="toBottom" href="javascript:void(0);"></a>
+</div>
+<div id="gToolbar_zoom">
+	<a title="缩小" id="zoom2big" href="javascript:void(0);"></a>
+    <a title="放大" id="zoom2small" href="javascript:void(0);"></a>
+    <a title="原始大小" id="zoom2original" href="javascript:void(0);"></a>
+    <a title="动画开关" id="stopAni" href="javascript:void(0);"></a>
+</div>
+
+<div id="contextMenu"></div>
+
+<div id="zoomr">
+    <div class="zoomr"></div><div class="zoomr"></div><div class="zoomr"></div><div class="zoomr"></div>
+ </div>
+
+报警改造成 json 以便输出更多信息
+报警动画开关
+icon wheel 和 html wheel 冲突
+移动 有bug : drag 非整数，移动非整数
+isBBoxIntersect multi selection
+rect 区域
+背景图片
+
+
+
+
+</body>
+</html>
